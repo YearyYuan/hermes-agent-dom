@@ -10755,6 +10755,10 @@ def cmd_memory(args):
         from hermes_cli.dual_memory import cmd_procedural
 
         cmd_procedural(args)
+    elif sub == "agent":
+        from hermes_cli.dual_memory import cmd_agent
+
+        cmd_agent(args)
     else:
         from hermes_cli.memory_setup import memory_command
 

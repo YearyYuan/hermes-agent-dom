@@ -82,6 +82,25 @@ def build_memory_parser(subparsers, *, cmd_memory: Callable) -> None:
     workspace_search.add_argument("query", help="Search query")
     workspace_search.add_argument("--top-k", type=int, default=3, help="Number of files to load")
 
+    workspace_agentic = workspace_sub.add_parser(
+        "agentic-search",
+        help="LLM-powered search: reads manifests, selects and loads the most relevant files",
+    )
+    workspace_agentic.add_argument("query", help="Natural-language search query")
+    workspace_agentic.add_argument("--top-k", type=int, default=3, help="Number of files to load")
+    workspace_agentic.add_argument("--model", default=None, help="Override LLM model for this call")
+
+    workspace_seed = workspace_sub.add_parser(
+        "seed",
+        help="Ingest knowledge from a directory of session markdown files into the workspace",
+    )
+    workspace_seed.add_argument(
+        "--seed-dir",
+        required=True,
+        help="Path to a directory of .md session files to extract and ingest",
+    )
+    workspace_seed.add_argument("--model", default=None, help="Override LLM model for this call")
+
     procedural_parser = memory_sub.add_parser(
         "procedural",
         help="Manage agent-facing procedural Skill Markdown",
@@ -98,4 +117,42 @@ def build_memory_parser(subparsers, *, cmd_memory: Callable) -> None:
     procedural_distill.add_argument("--file", default="", help="Read provenance/source trace from a file")
     procedural_distill.add_argument("--overwrite", action="store_true", help="Replace an existing skill draft")
     procedural_distill.add_argument("content", nargs="*", help="Optional provenance/source trace")
+    agent_parser = memory_sub.add_parser(
+        "agent",
+        help="Memory agent: nightly knowledge ingestion into the personal workspace",
+    )
+    agent_sub = agent_parser.add_subparsers(dest="agent_command")
+
+    agent_schedule = agent_sub.add_parser(
+        "schedule",
+        help="Register a nightly ingestion cron job in hermes cron (default: 2 AM daily)",
+    )
+    agent_schedule.add_argument(
+        "--schedule",
+        default="0 2 * * *",
+        help="Cron expression or interval (default: '0 2 * * *')",
+    )
+    agent_schedule.add_argument(
+        "--force",
+        action="store_true",
+        help="Replace existing nightly job if already registered",
+    )
+
+    agent_ingest = agent_sub.add_parser(
+        "ingest",
+        help="Run a one-shot ingestion now (seed dir or sessions from state.db)",
+    )
+    agent_ingest.add_argument(
+        "--seed-dir",
+        default=None,
+        help="Ingest .md files from this directory instead of state.db",
+    )
+    agent_ingest.add_argument(
+        "--since-hours",
+        type=float,
+        default=24.0,
+        help="How many hours back to look in state.db (default: 24)",
+    )
+    agent_ingest.add_argument("--model", default=None, help="Override LLM model")
+
     memory_parser.set_defaults(func=cmd_memory)
